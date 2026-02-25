@@ -76,11 +76,11 @@ export default function AddContactModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl border-border bg-card max-w-md mx-4 p-0 gap-0">
+      <DialogContent className="rounded-2xl border-border bg-card w-[calc(100%-2rem)] max-w-md p-0 gap-0">
         <DialogHeader className="p-5 pb-0">
           <DialogTitle className="text-xl">Add New Lead</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col">
+        <form onSubmit={handleSubmit} className="flex flex-col overflow-y-auto max-h-[85vh]">
           {/* Section 1: Contact Info */}
           <div className="p-5 space-y-3">
             <div className="space-y-1.5">
