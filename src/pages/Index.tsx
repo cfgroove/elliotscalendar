@@ -139,14 +139,17 @@ export default function Dashboard() {
             <TabsTrigger value="daily" className="rounded-lg text-xs font-semibold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Clock className="h-3.5 w-3.5" />
               Daily
+              {dailyTasks.length > 0 && <span className="ml-1 min-w-5 h-5 rounded-full bg-primary-foreground/20 text-[10px] flex items-center justify-center">{dailyTasks.length}</span>}
             </TabsTrigger>
             <TabsTrigger value="weekly" className="rounded-lg text-xs font-semibold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Calendar className="h-3.5 w-3.5" />
               Weekly
+              {weeklyTasks.length > 0 && <span className="ml-1 min-w-5 h-5 rounded-full bg-primary-foreground/20 text-[10px] flex items-center justify-center">{weeklyTasks.length}</span>}
             </TabsTrigger>
             <TabsTrigger value="monthly" className="rounded-lg text-xs font-semibold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <CalendarDays className="h-3.5 w-3.5" />
               Monthly
+              {monthlyTasks.length > 0 && <span className="ml-1 min-w-5 h-5 rounded-full bg-primary-foreground/20 text-[10px] flex items-center justify-center">{monthlyTasks.length}</span>}
             </TabsTrigger>
           </TabsList>
 
