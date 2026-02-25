@@ -1,34 +1,27 @@
 
 
-## Mobile Overflow Audit
+## Add Swipe-to-Dismiss to Mark Done Modal
 
-After reviewing all pages and modals, here are the issues found:
+### Approach
 
-### Issue 1: MarkDoneModal — same overflow bug as AddContactModal had
-**File:** `src/components/MarkDoneModal.tsx`, line 62
-- Uses `max-w-md mx-4` on `DialogContent` — identical to the bug we just fixed on AddContactModal
-- Fix: change to `w-[calc(100%-2rem)] max-w-md` (same pattern)
+Convert the `MarkDoneModal` from a `Dialog` (centered modal) to a `Drawer` (bottom sheet) — the same component already used by `ContactDetailSheet`. The `Drawer` component (powered by `vaul`, already installed) natively supports swipe-down-to-dismiss with a drag handle, giving the exact native mobile feel without any custom touch event handling.
 
-### Issue 2: Admin page table overflows on mobile
-**File:** `src/pages/Admin.tsx`, line 56
-- A 5-column `Table` (Name, Email, Signed Up, Last Active, Contacts) renders at full width with no horizontal scroll wrapper
-- On mobile, columns get crushed or overflow off-screen
-- Fix: wrap the `Table` in a `div` with `overflow-x-auto` so it scrolls horizontally, and add `min-w-[600px]` to the table itself to keep columns readable
+### Changes (single file: `src/components/MarkDoneModal.tsx`)
 
-### Everything else is fine
-- **Dashboard (Index.tsx):** Uses `px-5`, `w-full`, text truncation — no overflow
-- **Pipeline.tsx:** Tab labels are short ("Warm", "Call", etc.) — fits in `grid-cols-4`
-- **CalendarView.tsx:** Calendar centered with `px-5` — fits
-- **Auth.tsx:** `max-w-sm` with `px-4` — fits
-- **ContactDetailSheet:** Uses `Drawer` (bottom sheet) — naturally full-width
-- **BottomNav:** `fixed bottom-0 left-0 right-0` — fine
-- **AddContactModal:** Already fixed with `w-[calc(100%-2rem)]`
+1. Replace `Dialog`/`DialogContent`/`DialogHeader`/`DialogTitle` imports with `Drawer`/`DrawerContent`/`DrawerHeader`/`DrawerTitle` from `@/components/ui/drawer`
+2. Swap JSX from `<Dialog>` → `<Drawer>` and `<DialogContent>` → `<DrawerContent>`
+3. Apply matching styles from `ContactDetailSheet`: `rounded-t-3xl border-border bg-card max-h-[85vh]`
+4. Content wraps in a scrollable `div` with `px-4 pb-8 overflow-y-auto`
+5. The `DrawerContent` automatically renders a drag handle at the top — users swipe down to dismiss
 
-### Changes summary
-| File | Change |
-|------|--------|
-| `MarkDoneModal.tsx` | `mx-4` → `w-[calc(100%-2rem)]` on DialogContent |
-| `Admin.tsx` | Wrap Table in `overflow-x-auto` container |
+### Why this approach
+- `vaul` Drawer already handles touch gestures (swipe velocity, snap points, dismiss threshold) out of the box
+- No custom `onTouchStart`/`onTouchMove` code needed
+- Consistent with the `ContactDetailSheet` which already uses this pattern
+- No new dependencies — `vaul` is already installed
 
-Two small edits, no new dependencies, no database changes.
+### Technical details
+- Single file change: `src/components/MarkDoneModal.tsx`
+- Import swap only — all form logic, state, and handlers remain identical
+- No database or dependency changes
 
