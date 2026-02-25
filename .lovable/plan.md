@@ -1,73 +1,43 @@
 
 
-## Pipeline Page Redesign
+## Redesign Add Lead Form
 
-### The Problem
+### What's changing
 
-The current pipeline uses a horizontal Kanban-style layout with 4 fixed-width (260px) columns that scroll horizontally. On mobile (which this app is clearly designed for), this creates several issues:
+Restructure the `AddContactModal` to match the reference screenshot layout: sectioned form with contact info at top, then a visually separated "Next Interaction" section with date pill buttons inline (not hidden in a popover), and Cancel/Save buttons at the bottom.
 
-- You can only see ~1.3 columns at a time, making drag-and-drop nearly impossible
-- HTML5 drag-and-drop (`draggable` / `onDrop`) does not work on mobile touch devices at all
-- Horizontal scrolling while trying to drag is a broken UX pattern on small screens
-- The "Drop leads here" empty states are barely visible
+### Layout (single file: `src/components/AddContactModal.tsx`)
 
-### Proposed Redesign: Tab-based Pipeline with Swipe-to-Move
+**Section 1 — Contact Info**
+- Name (required)
+- Phone
+- Category (Pipeline Stage) — full-width select instead of half-width
+- Notes textarea
 
-Replace the horizontal columns with a **tabbed view** (one category per tab) and use **action buttons or swipe gestures** to move contacts between stages.
+**Section 2 — "Next Interaction" header** (styled in primary/accent color like the screenshot's red header)
+- Next Action Task input
+- Next Action Date as **inline pill buttons** (Today, Tomorrow, Next Week, Next Month, Custom)
+  - "Custom" opens calendar popover
+  - Selected pill gets outlined/highlighted in primary color
+  - No more hidden-in-popover date presets
 
-```text
-┌─────────────────────────────┐
-│ Pipeline          1 total   │
-│                             │
-│ ┌─────┬─────┬─────┬──────┐  │
-│ │Warm │Call │Ready│Follow│  │
-│ │ (1) │ (0) │ (0) │  (0) │  │
-│ └─────┴─────┴─────┴──────┘  │
-│                             │
-│ ┌───────────────────────┐   │
-│ │ John 1            ▸ ▸ │   │
-│ │ follow up call        │   │
-│ │ Mar 11          ☎ 💬  │   │
-│ └───────────────────────┘   │
-│                             │
-│   Empty? "No leads here"   │
-│                             │
-│              [+]            │
-│ ┌───┬───┬───┐               │
-│ │ 🏠│ ▦ │ 📅│               │
-│ └───┴───┴───┘               │
-└─────────────────────────────┘
-```
+**Footer — two buttons side by side**
+- Cancel (ghost/outline) and Save Lead (primary)
+- Replaces the current single full-width "Add Lead" button
 
-### Implementation Details
+### Specific changes
 
-**File: `src/pages/Pipeline.tsx`** (full rewrite)
-
-1. **Replace horizontal columns with `Tabs` component** using the existing Radix `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent` from `src/components/ui/tabs.tsx`
-   - One tab per category: "Warm Lead", "Call Soon", "Ready to Inspect", "Monthly Follow Up"
-   - Each tab trigger shows a count badge (same pattern as Dashboard)
-   - Shortened labels for mobile: "Warm", "Call", "Ready", "Follow Up"
-
-2. **Remove HTML5 drag-and-drop entirely** (does not work on mobile)
-
-3. **Add move-forward / move-back buttons on each card**
-   - Small chevron buttons (`ChevronLeft` / `ChevronRight` from lucide) on each contact card
-   - Tapping moves the contact to the adjacent category in the pipeline order
-   - Visual feedback via toast (already in place)
-
-4. **Add call/text quick-action buttons on cards** (phone and message icons) for contacts with phone numbers, consistent with the Dashboard cards
-
-5. **Better empty state** — centered message with a prompt to add a lead
-
-### What stays the same
-- The `+` FAB button and `AddContactModal`
-- `ContactDetailSheet` for viewing/editing details on card tap
-- `BottomNav`
-- All data hooks (`useContacts`, `useUpdateContact`)
+1. **Remove** the `Popover`/`Calendar` date picker combo and the `CalendarIcon` import
+2. **Replace** with inline pill buttons using the existing `Button` component with conditional border styling
+3. **Add** a "Today" preset and rename "2 Weeks"/"3 Months" to "Next Month" and add "Custom" that opens a `Popover` with `Calendar`
+4. **Reorder** fields: Name → Phone → Category (full width) → Notes → section divider → Task → Date pills
+5. **Add** "Next Interaction" section heading styled with `text-primary font-semibold`
+6. **Replace** single submit button with Cancel + Save Lead side by side
+7. **Switch** from `Dialog` to `Drawer` (bottom sheet) for mobile-first UX, matching the `ContactDetailSheet` pattern — or keep `Dialog` but use the same full-width approach. Will keep `Dialog` since the reference shows a modal-style form.
 
 ### Technical notes
-- Single file change: `src/pages/Pipeline.tsx`
-- No new dependencies — uses existing `Tabs` UI component and lucide icons
+- Single file change: `src/components/AddContactModal.tsx`
+- No new dependencies
 - No database changes
-- The tab-based approach works perfectly on both mobile and desktop
+- All existing form logic and hooks stay the same
 
