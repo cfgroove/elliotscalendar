@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format, isToday, isBefore, startOfDay, parseISO, addDays, startOfWeek, endOfWeek, isWithinInterval, isSameDay } from 'date-fns';
-import { Plus, Check, Phone, ChevronRight, LogOut, Calendar, Clock, CalendarDays } from 'lucide-react';
+import { Plus, Check, Phone, ChevronRight, LogOut, Calendar, Clock, CalendarDays, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,37 +24,43 @@ export default function Dashboard() {
   const [doneContact, setDoneContact] = useState<Contact | null>(null);
   const [detailContact, setDetailContact] = useState<Contact | null>(null);
   const [activeTab, setActiveTab] = useState('daily');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const today = startOfDay(new Date());
   const tomorrow = addDays(today, 1);
   const weekEnd = addDays(today, 7);
   const monthEnd = addDays(today, 30);
 
+  const searchLower = searchQuery.toLowerCase();
+
   const dailyTasks = useMemo(() =>
     contacts.filter(c => {
       if (!c.next_action_date) return false;
+      if (searchQuery && !c.name.toLowerCase().includes(searchLower)) return false;
       const d = parseISO(c.next_action_date);
       return isToday(d) || isBefore(d, today);
     }).sort((a, b) => parseISO(a.next_action_date!).getTime() - parseISO(b.next_action_date!).getTime()),
-    [contacts, today]
+    [contacts, today, searchLower]
   );
 
   const weeklyTasks = useMemo(() =>
     contacts.filter(c => {
       if (!c.next_action_date) return false;
+      if (searchQuery && !c.name.toLowerCase().includes(searchLower)) return false;
       const d = startOfDay(parseISO(c.next_action_date));
       return isWithinInterval(d, { start: tomorrow, end: weekEnd });
     }).sort((a, b) => parseISO(a.next_action_date!).getTime() - parseISO(b.next_action_date!).getTime()),
-    [contacts, tomorrow, weekEnd]
+    [contacts, tomorrow, weekEnd, searchLower]
   );
 
   const monthlyTasks = useMemo(() =>
     contacts.filter(c => {
       if (!c.next_action_date) return false;
+      if (searchQuery && !c.name.toLowerCase().includes(searchLower)) return false;
       const d = startOfDay(parseISO(c.next_action_date));
       return isWithinInterval(d, { start: addDays(weekEnd, 1), end: monthEnd });
     }).sort((a, b) => parseISO(a.next_action_date!).getTime() - parseISO(b.next_action_date!).getTime()),
-    [contacts, weekEnd, monthEnd]
+    [contacts, weekEnd, monthEnd, searchLower]
   );
 
   // Group weekly tasks by day
@@ -112,6 +118,22 @@ export default function Dashboard() {
       </header>
 
       <main className="px-5 space-y-4">
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search contacts..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full h-10 pl-9 pr-9 rounded-xl bg-secondary text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-3 bg-secondary rounded-xl h-11">
             <TabsTrigger value="daily" className="rounded-lg text-xs font-semibold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
