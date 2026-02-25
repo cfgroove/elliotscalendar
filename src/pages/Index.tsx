@@ -1,14 +1,139 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useMemo } from 'react';
+import { format, isToday, isBefore, startOfDay, parseISO } from 'date-fns';
+import { Plus, Check, Phone, ChevronRight, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { useContacts, type Contact } from '@/hooks/useContacts';
+import AddContactModal from '@/components/AddContactModal';
+import MarkDoneModal from '@/components/MarkDoneModal';
+import ContactDetailSheet from '@/components/ContactDetailSheet';
+import BottomNav from '@/components/BottomNav';
 
-const Index = () => {
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+export default function Dashboard() {
+  const { displayName, signOut } = useAuth();
+  const { data: contacts = [], isLoading } = useContacts();
+  const [addOpen, setAddOpen] = useState(false);
+  const [doneContact, setDoneContact] = useState<Contact | null>(null);
+  const [detailContact, setDetailContact] = useState<Contact | null>(null);
+
+  const today = startOfDay(new Date());
+
+  const todayTasks = useMemo(() =>
+    contacts.filter(c => {
+      if (!c.next_action_date) return false;
+      const d = parseISO(c.next_action_date);
+      return isToday(d) || isBefore(d, today);
+    }).sort((a, b) => {
+      const da = parseISO(a.next_action_date!);
+      const db = parseISO(b.next_action_date!);
+      return da.getTime() - db.getTime();
+    }),
+    [contacts, today]
+  );
+
+  const overdueTasks = todayTasks.filter(c => isBefore(parseISO(c.next_action_date!), today));
+  const dueTodayTasks = todayTasks.filter(c => isToday(parseISO(c.next_action_date!)));
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen pb-24">
+      <header className="px-5 pt-6 pb-4 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {getGreeting()}, {displayName || 'there'}.
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {todayTasks.length > 0
+              ? `You have ${todayTasks.length} action${todayTasks.length > 1 ? 's' : ''} today.`
+              : "You're all caught up — no actions today."}
+          </p>
+        </div>
+        <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground" onClick={signOut}>
+          <LogOut className="h-4 w-4" />
+        </Button>
+      </header>
+
+      <main className="px-5 space-y-6">
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-24 rounded-2xl bg-card animate-pulse" />
+            ))}
+          </div>
+        ) : todayTasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+              <Check className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-lg font-semibold mb-1">All clear</h2>
+            <p className="text-sm text-muted-foreground">No actions scheduled for today.</p>
+          </div>
+        ) : (
+          <>
+            {overdueTasks.length > 0 && (
+              <section>
+                <h2 className="text-xs uppercase tracking-wider text-warning font-semibold mb-3">Overdue</h2>
+                <div className="space-y-3">
+                  {overdueTasks.map(c => (
+                    <TaskCard key={c.id} contact={c} overdue onDone={() => setDoneContact(c)} onTap={() => setDetailContact(c)} />
+                  ))}
+                </div>
+              </section>
+            )}
+            {dueTodayTasks.length > 0 && (
+              <section>
+                <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Today</h2>
+                <div className="space-y-3">
+                  {dueTodayTasks.map(c => (
+                    <TaskCard key={c.id} contact={c} onDone={() => setDoneContact(c)} onTap={() => setDetailContact(c)} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        )}
+      </main>
+
+      <button
+        onClick={() => setAddOpen(true)}
+        className="fixed bottom-20 right-5 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
+
+      <AddContactModal open={addOpen} onOpenChange={setAddOpen} />
+      <MarkDoneModal contact={doneContact} open={!!doneContact} onOpenChange={o => !o && setDoneContact(null)} />
+      <ContactDetailSheet contact={detailContact} open={!!detailContact} onOpenChange={o => !o && setDetailContact(null)} />
+      <BottomNav />
     </div>
   );
-};
+}
 
-export default Index;
+function TaskCard({ contact, overdue, onDone, onTap }: { contact: Contact; overdue?: boolean; onDone: () => void; onTap: () => void }) {
+  return (
+    <div className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border animate-fade-in">
+      <button
+        onClick={(e) => { e.stopPropagation(); onDone(); }}
+        className={`shrink-0 h-10 w-10 rounded-xl flex items-center justify-center transition-colors ${overdue ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'}`}
+      >
+        <Check className="h-5 w-5" />
+      </button>
+      <button onClick={onTap} className="flex-1 text-left min-w-0">
+        <p className="text-sm font-semibold truncate">{contact.next_action_task || 'Follow up'}</p>
+        <p className="text-sm text-muted-foreground truncate">{contact.name}</p>
+      </button>
+      {contact.phone && (
+        <a href={`tel:${contact.phone}`} onClick={e => e.stopPropagation()} className="shrink-0 h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <Phone className="h-4 w-4" />
+        </a>
+      )}
+      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+    </div>
+  );
+}
