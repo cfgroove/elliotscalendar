@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Pipeline from "./pages/Pipeline";
 import CalendarView from "./pages/CalendarView";
 import Auth from "./pages/Auth";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const AppRoutes = () => (
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
     <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
+    <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
