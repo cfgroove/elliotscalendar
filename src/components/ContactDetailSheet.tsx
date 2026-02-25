@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { CalendarIcon, Phone, Pencil, Trash2 } from 'lucide-react';
+import { CalendarIcon, Phone, MessageSquare, Pencil, Trash2 } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -133,10 +133,16 @@ export default function ContactDetailSheet({ contact, open, onOpenChange }: Prop
           ) : (
             <>
               {contact.phone && (
-                <a href={`tel:${contact.phone}`} className="flex items-center gap-3 p-3 rounded-xl bg-secondary">
-                  <Phone className="h-4 w-4 text-primary" />
-                  <span>{contact.phone}</span>
-                </a>
+                <div className="grid grid-cols-2 gap-3">
+                  <a href={`tel:${contact.phone}`} className="flex items-center justify-center gap-2 p-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors">
+                    <Phone className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Call</span>
+                  </a>
+                  <a href={`sms:${contact.phone}`} className="flex items-center justify-center gap-2 p-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Text</span>
+                  </a>
+                </div>
               )}
               <div className="p-3 rounded-xl bg-secondary space-y-1">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Category</p>
