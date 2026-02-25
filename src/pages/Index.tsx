@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format, isToday, isBefore, startOfDay, parseISO, addDays, startOfWeek, endOfWeek, isWithinInterval, isSameDay } from 'date-fns';
-import { Plus, Check, Phone, ChevronRight, LogOut, Calendar, Clock, CalendarDays, Search, X } from 'lucide-react';
+import { Plus, Check, Phone, MessageSquare, ChevronRight, LogOut, Calendar, Clock, CalendarDays, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
@@ -271,9 +271,14 @@ function TaskCard({ contact, overdue, onDone, onTap }: { contact: Contact; overd
         <p className="text-sm text-muted-foreground truncate">{contact.name}</p>
       </button>
       {contact.phone && (
-        <a href={`tel:${contact.phone}`} onClick={e => e.stopPropagation()} className="shrink-0 h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-          <Phone className="h-4 w-4" />
-        </a>
+        <>
+          <a href={`sms:${contact.phone}`} onClick={e => e.stopPropagation()} className="shrink-0 h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <MessageSquare className="h-4 w-4" />
+          </a>
+          <a href={`tel:${contact.phone}`} onClick={e => e.stopPropagation()} className="shrink-0 h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <Phone className="h-4 w-4" />
+          </a>
+        </>
       )}
       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
     </div>
