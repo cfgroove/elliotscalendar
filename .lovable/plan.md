@@ -1,105 +1,73 @@
 
 
-## Super Admin View at `/admin`
+## Pipeline Page Redesign
 
-### What changes
+### The Problem
 
-Add a role-based admin system and a new `/admin` page where you (the super admin) can see all registered users, their profile info, signup date, and contact counts.
+The current pipeline uses a horizontal Kanban-style layout with 4 fixed-width (260px) columns that scroll horizontally. On mobile (which this app is clearly designed for), this creates several issues:
 
-### Database changes (3 migrations)
+- You can only see ~1.3 columns at a time, making drag-and-drop nearly impossible
+- HTML5 drag-and-drop (`draggable` / `onDrop`) does not work on mobile touch devices at all
+- Horizontal scrolling while trying to drag is a broken UX pattern on small screens
+- The "Drop leads here" empty states are barely visible
 
-**1. Create `user_roles` table with `app_role` enum**
+### Proposed Redesign: Tab-based Pipeline with Swipe-to-Move
 
-```sql
-CREATE TYPE public.app_role AS ENUM ('admin', 'user');
+Replace the horizontal columns with a **tabbed view** (one category per tab) and use **action buttons or swipe gestures** to move contacts between stages.
 
-CREATE TABLE public.user_roles (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  role app_role NOT NULL,
-  UNIQUE (user_id, role)
-);
-
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+```text
+┌─────────────────────────────┐
+│ Pipeline          1 total   │
+│                             │
+│ ┌─────┬─────┬─────┬──────┐  │
+│ │Warm │Call │Ready│Follow│  │
+│ │ (1) │ (0) │ (0) │  (0) │  │
+│ └─────┴─────┴─────┴──────┘  │
+│                             │
+│ ┌───────────────────────┐   │
+│ │ John 1            ▸ ▸ │   │
+│ │ follow up call        │   │
+│ │ Mar 11          ☎ 💬  │   │
+│ └───────────────────────┘   │
+│                             │
+│   Empty? "No leads here"   │
+│                             │
+│              [+]            │
+│ ┌───┬───┬───┐               │
+│ │ 🏠│ ▦ │ 📅│               │
+│ └───┴───┴───┘               │
+└─────────────────────────────┘
 ```
 
-**2. Create `has_role` security definer function + RLS policies**
+### Implementation Details
 
-```sql
-CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = _role
-  )
-$$;
+**File: `src/pages/Pipeline.tsx`** (full rewrite)
 
--- Admins can read all roles; users can read their own
-CREATE POLICY "Admins can view all roles"
-  ON public.user_roles FOR SELECT
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
+1. **Replace horizontal columns with `Tabs` component** using the existing Radix `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent` from `src/components/ui/tabs.tsx`
+   - One tab per category: "Warm Lead", "Call Soon", "Ready to Inspect", "Monthly Follow Up"
+   - Each tab trigger shows a count badge (same pattern as Dashboard)
+   - Shortened labels for mobile: "Warm", "Call", "Ready", "Follow Up"
 
-CREATE POLICY "Users can view own roles"
-  ON public.user_roles FOR SELECT
-  TO authenticated
-  USING (user_id = auth.uid());
-```
+2. **Remove HTML5 drag-and-drop entirely** (does not work on mobile)
 
-**3. Grant your account the admin role + allow admins to read all profiles**
+3. **Add move-forward / move-back buttons on each card**
+   - Small chevron buttons (`ChevronLeft` / `ChevronRight` from lucide) on each contact card
+   - Tapping moves the contact to the adjacent category in the pipeline order
+   - Visual feedback via toast (already in place)
 
-```sql
--- Make Chase Francis (your account) an admin
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('31a252b4-2018-47ae-a83c-6717b6b8036e', 'admin');
+4. **Add call/text quick-action buttons on cards** (phone and message icons) for contacts with phone numbers, consistent with the Dashboard cards
 
--- Allow admins to view all profiles (existing policy only allows own)
-CREATE POLICY "Admins can view all profiles"
-  ON public.profiles FOR SELECT
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
+5. **Better empty state** — centered message with a prompt to add a lead
 
--- Allow admins to view all contacts (for contact count)
-CREATE POLICY "Admins can view all contacts"
-  ON public.contacts FOR SELECT
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
-```
+### What stays the same
+- The `+` FAB button and `AddContactModal`
+- `ContactDetailSheet` for viewing/editing details on card tap
+- `BottomNav`
+- All data hooks (`useContacts`, `useUpdateContact`)
 
-### New edge function: `admin-users`
-
-An edge function that uses the service role key to list users from `auth.users` (email, created_at, last_sign_in_at) and joins with profiles for display names and contacts for counts. This is necessary because `auth.users` is not queryable from the client SDK.
-
-- Validates the calling user has the `admin` role before returning data
-- Returns: `{ id, email, display_name, created_at, last_sign_in_at, contact_count }`
-
-### New files
-
-**`src/pages/Admin.tsx`**
-- Protected page at `/admin` that checks the user's role
-- Calls the `admin-users` edge function
-- Displays a table with columns: Name, Email, Signed Up, Last Active, Contacts
-- Shows a "not authorized" message if the user is not an admin
-- Clean table design matching the app's dark theme
-
-**`src/hooks/useAdminUsers.tsx`**
-- React Query hook that calls the `admin-users` edge function
-- Returns loading/error/data states
-
-### Updated files
-
-**`src/App.tsx`**
-- Add route: `<Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />`
-
-### Security model
-
-- Admin check happens server-side in the edge function using the service role key
-- The `has_role` function is `SECURITY DEFINER` to avoid RLS recursion
-- Regular users cannot access the admin data even if they navigate to `/admin`
-- The `user_roles` table is protected by RLS
+### Technical notes
+- Single file change: `src/pages/Pipeline.tsx`
+- No new dependencies — uses existing `Tabs` UI component and lucide icons
+- No database changes
+- The tab-based approach works perfectly on both mobile and desktop
 
