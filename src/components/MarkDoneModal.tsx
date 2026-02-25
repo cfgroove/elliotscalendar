@@ -59,7 +59,7 @@ export default function MarkDoneModal({ contact, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl border-border bg-card max-w-md mx-4">
+      <DialogContent className="rounded-2xl border-border bg-card w-[calc(100%-2rem)] max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">Task Complete — {contact.name}</DialogTitle>
         </DialogHeader>
