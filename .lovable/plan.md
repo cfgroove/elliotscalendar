@@ -1,25 +1,31 @@
 
 
-## Add Search/Filter Bar to Dashboard
+## Add Click-to-Call and Click-to-Text Buttons
 
 ### What changes
-Add a search input at the top of the dashboard (below the greeting, above the tabs) that filters contacts by name across all three tabs in real-time.
+
+Update the `TaskCard` component in `src/pages/Index.tsx` and the contact detail view in `src/components/ContactDetailSheet.tsx` to include both a call button and a text/SMS button when a phone number is present.
 
 ### Implementation
 
-**File: `src/pages/Index.tsx`**
+**File: `src/pages/Index.tsx` — `TaskCard` component**
 
-1. Add a `searchQuery` state (`useState('')`).
-2. Place a search input with a magnifying glass icon between the header and tabs — styled with rounded-xl, bg-secondary, matching the dark theme.
-3. Filter all three task lists (`dailyTasks`, `weeklyTasks`, `monthlyTasks`) by checking if `contact.name.toLowerCase()` includes the search query. The filter applies on top of the existing date-based filtering.
-4. When the search field is non-empty, show a small "×" clear button inside the input.
+- Replace the single `tel:` phone button with two side-by-side buttons:
+  - **Call** button: `<a href="tel:{phone}">` with `Phone` icon (existing)
+  - **Text** button: `<a href="sms:{phone}">` with `MessageSquare` icon (from lucide-react)
+- Both buttons use the same styling as the current phone button (`h-10 w-10 rounded-xl bg-secondary`)
+- Only rendered when `contact.phone` exists
 
-### UI details
-- Input uses `Search` icon from lucide-react (already imported pattern in the project).
-- Matches existing design: `bg-secondary`, `rounded-xl`, `text-sm`, placeholder "Search contacts...".
-- Filtering is instant (no debounce needed for this data size).
+**File: `src/components/ContactDetailSheet.tsx` — read-only view**
 
-### No other files change
-- No database changes.
-- No new components needed — just a simple input + filter logic in `Index.tsx`.
+- Replace the single phone link with two buttons side by side:
+  - **Call**: `<a href="tel:{phone}">` with Phone icon and "Call" label
+  - **Text**: `<a href="sms:{phone}">` with MessageSquare icon and "Text" label
+- Styled as a horizontal row of two equally-sized rounded-xl buttons within the existing `bg-secondary` section
+
+### Technical notes
+- `sms:` URI scheme opens native SMS app on both iOS and Android
+- `tel:` URI scheme opens native dialer (already working)
+- `MessageSquare` icon is available in lucide-react (already installed)
+- No database or backend changes needed
 
