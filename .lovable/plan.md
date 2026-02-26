@@ -1,27 +1,35 @@
 
 
-## Add Swipe-to-Dismiss to Mark Done Modal
+## Add Contacts Tab to Bottom Navigation
 
-### Approach
+### Changes
 
-Convert the `MarkDoneModal` from a `Dialog` (centered modal) to a `Drawer` (bottom sheet) — the same component already used by `ContactDetailSheet`. The `Drawer` component (powered by `vaul`, already installed) natively supports swipe-down-to-dismiss with a drag handle, giving the exact native mobile feel without any custom touch event handling.
+**1. New page: `src/pages/Contacts.tsx`**
+- Full list of all contacts for the logged-in user, sorted alphabetically by name
+- Search bar at top (same style as Dashboard)
+- Each contact row shows: name, phone, category badge, and next action date
+- Tapping a row opens the existing `ContactDetailSheet` (reuse)
+- FAB button to add new contact (reuse `AddContactModal`)
+- Includes `BottomNav` at bottom
+- Empty state when no contacts exist
 
-### Changes (single file: `src/components/MarkDoneModal.tsx`)
+**2. Update `src/components/BottomNav.tsx`**
+- Add a "Contacts" tab with the `Users` icon from lucide-react
+- Position it between Pipeline and Calendar
+- Path: `/contacts`
 
-1. Replace `Dialog`/`DialogContent`/`DialogHeader`/`DialogTitle` imports with `Drawer`/`DrawerContent`/`DrawerHeader`/`DrawerTitle` from `@/components/ui/drawer`
-2. Swap JSX from `<Dialog>` → `<Drawer>` and `<DialogContent>` → `<DrawerContent>`
-3. Apply matching styles from `ContactDetailSheet`: `rounded-t-3xl border-border bg-card max-h-[85vh]`
-4. Content wraps in a scrollable `div` with `px-4 pb-8 overflow-y-auto`
-5. The `DrawerContent` automatically renders a drag handle at the top — users swipe down to dismiss
-
-### Why this approach
-- `vaul` Drawer already handles touch gestures (swipe velocity, snap points, dismiss threshold) out of the box
-- No custom `onTouchStart`/`onTouchMove` code needed
-- Consistent with the `ContactDetailSheet` which already uses this pattern
-- No new dependencies — `vaul` is already installed
+**3. Update `src/App.tsx`**
+- Add route `/contacts` pointing to the new `Contacts` page, wrapped in `ProtectedRoute`
 
 ### Technical details
-- Single file change: `src/components/MarkDoneModal.tsx`
-- Import swap only — all form logic, state, and handlers remain identical
-- No database or dependency changes
+
+| File | Change |
+|------|--------|
+| `src/pages/Contacts.tsx` | New file — contact list page with search, alphabetical sort, detail sheet |
+| `src/components/BottomNav.tsx` | Add `{ path: '/contacts', icon: Users, label: 'Contacts' }` tab |
+| `src/App.tsx` | Add `<Route path="/contacts">` with lazy import |
+
+- Reuses `useContacts()` hook for data fetching (already returns all user contacts)
+- Reuses `ContactDetailSheet` and `AddContactModal` components
+- No database or dependency changes needed
 
