@@ -22,6 +22,7 @@ interface Props {
 export default function ContactDetailSheet({ contact, open, onOpenChange }: Props) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [category, setCategory] = useState<ContactCategory>('Warm Lead');
@@ -33,6 +34,7 @@ export default function ContactDetailSheet({ contact, open, onOpenChange }: Prop
   useEffect(() => {
     if (contact) {
       setName(contact.name);
+      setEmail((contact as any).email || '');
       setPhone(contact.phone || '');
       setNotes(contact.notes || '');
       setCategory(contact.category as ContactCategory);
@@ -49,6 +51,7 @@ export default function ContactDetailSheet({ contact, open, onOpenChange }: Prop
       await updateContact.mutateAsync({
         id: contact.id,
         name: name.trim(),
+        email: email.trim() || null,
         phone: phone.trim() || null,
         notes: notes.trim() || null,
         category,
@@ -88,6 +91,10 @@ export default function ContactDetailSheet({ contact, open, onOpenChange }: Prop
               <div className="space-y-2">
                 <Label>Name</Label>
                 <Input value={name} onChange={e => setName(e.target.value)} maxLength={100} className="rounded-xl bg-secondary border-0 h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} maxLength={200} className="rounded-xl bg-secondary border-0 h-11" />
               </div>
               <div className="space-y-2">
                 <Label>Phone</Label>
@@ -142,6 +149,12 @@ export default function ContactDetailSheet({ contact, open, onOpenChange }: Prop
                     <MessageSquare className="h-4 w-4 text-primary" />
                     <span className="font-medium">Text</span>
                   </a>
+                </div>
+              )}
+              {(contact as any).email && (
+                <div className="p-3 rounded-xl bg-secondary space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Email</p>
+                  <a href={`mailto:${(contact as any).email}`} className="font-medium text-primary">{(contact as any).email}</a>
                 </div>
               )}
               <div className="p-3 rounded-xl bg-secondary space-y-1">
