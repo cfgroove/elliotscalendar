@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       contacts: {
         Row: {
+          archived_at: string | null
           category: Database["public"]["Enums"]["contact_category"]
           created_at: string
           id: string
@@ -28,6 +29,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
           category?: Database["public"]["Enums"]["contact_category"]
           created_at?: string
           id?: string
@@ -40,6 +42,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archived_at?: string | null
           category?: Database["public"]["Enums"]["contact_category"]
           created_at?: string
           id?: string

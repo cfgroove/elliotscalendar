@@ -19,7 +19,26 @@ export function useContacts() {
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
+        .is('archived_at', null)
         .order('next_action_date', { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data as Contact[];
+    },
+    enabled: !!user,
+  });
+}
+
+export function useArchivedContacts() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['archived-contacts', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .not('archived_at', 'is', null)
+        .order('archived_at', { ascending: false });
       if (error) throw error;
       return data as Contact[];
     },
@@ -59,7 +78,10 @@ export function useUpdateContact() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['contacts'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contacts'] });
+      qc.invalidateQueries({ queryKey: ['archived-contacts'] });
+    },
   });
 }
 
@@ -68,9 +90,33 @@ export function useDeleteContact() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('contacts').delete().eq('id', id);
+      const { error } = await supabase
+        .from('contacts')
+        .update({ archived_at: new Date().toISOString() } as any)
+        .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['contacts'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contacts'] });
+      qc.invalidateQueries({ queryKey: ['archived-contacts'] });
+    },
+  });
+}
+
+export function useRestoreContact() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('contacts')
+        .update({ archived_at: null } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contacts'] });
+      qc.invalidateQueries({ queryKey: ['archived-contacts'] });
+    },
   });
 }
