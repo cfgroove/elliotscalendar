@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { useUpdateContact, useDeleteContact, CATEGORIES, type Contact, type ContactCategory } from '@/hooks/useContacts';
+import { useUpdateContact, CATEGORIES, type Contact, type ContactCategory } from '@/hooks/useContacts';
 import { toast } from 'sonner';
 
 interface Props {
@@ -31,7 +31,6 @@ export default function MarkDoneModal({ contact, open, onOpenChange }: Props) {
   const [date, setDate] = useState<Date | undefined>();
   const [task, setTask] = useState('');
   const updateContact = useUpdateContact();
-  const deleteContact = useDeleteContact();
 
   if (!contact) return null;
 
@@ -51,10 +50,10 @@ export default function MarkDoneModal({ contact, open, onOpenChange }: Props) {
 
   const handleClose = async () => {
     try {
-      await deleteContact.mutateAsync(contact.id);
-      toast.success('Lead closed');
+      await updateContact.mutateAsync({ id: contact.id, archived_at: new Date().toISOString() } as any);
+      toast.success('Lead archived');
       onOpenChange(false);
-    } catch { toast.error('Failed to close'); }
+    } catch { toast.error('Failed to archive'); }
   };
 
   return (
@@ -114,8 +113,8 @@ export default function MarkDoneModal({ contact, open, onOpenChange }: Props) {
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">This will remove <strong>{contact.name}</strong> from your pipeline.</p>
-              <Button variant="destructive" onClick={handleClose} disabled={deleteContact.isPending} className="w-full h-12 rounded-xl font-semibold">
-                {deleteContact.isPending ? 'Closing...' : 'Close Lead'}
+              <Button variant="destructive" onClick={handleClose} disabled={updateContact.isPending} className="w-full h-12 rounded-xl font-semibold">
+                {updateContact.isPending ? 'Archiving...' : 'Archive Lead'}
               </Button>
             </div>
           )}

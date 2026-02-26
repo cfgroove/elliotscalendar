@@ -10,6 +10,7 @@ import CalendarView from "./pages/CalendarView";
 import Contacts from "./pages/Contacts";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import Archive from "./pages/Archive";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const AppRoutes = () => (
     <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
     <Route path="/contacts" element={<ProtectedRoute><Contacts /></ProtectedRoute>} />
     <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
+    <Route path="/archive" element={<ProtectedRoute><Archive /></ProtectedRoute>} />
     <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>

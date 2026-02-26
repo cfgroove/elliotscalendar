@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Columns3, Users, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Columns3, Users, CalendarDays, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const tabs = [
@@ -7,6 +7,7 @@ const tabs = [
   { path: '/pipeline', icon: Columns3, label: 'Pipeline' },
   { path: '/contacts', icon: Users, label: 'Contacts' },
   { path: '/calendar', icon: CalendarDays, label: 'Calendar' },
+  { path: '/archive', icon: Archive, label: 'Archive' },
 ];
 
 export default function BottomNav() {
