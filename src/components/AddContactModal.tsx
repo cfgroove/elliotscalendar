@@ -29,6 +29,7 @@ const datePresets: { key: DatePresetKey; label: string; getValue?: () => Date }[
 
 export default function AddContactModal({ open, onOpenChange }: Props) {
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [category, setCategory] = useState<ContactCategory>('Warm Lead');
@@ -39,7 +40,7 @@ export default function AddContactModal({ open, onOpenChange }: Props) {
   const createContact = useCreateContact();
 
   const reset = () => {
-    setName(''); setPhone(''); setNotes(''); setCategory('Warm Lead');
+    setName(''); setEmail(''); setPhone(''); setNotes(''); setCategory('Warm Lead');
     setDate(undefined); setTask(''); setSelectedPreset(null);
   };
 
@@ -60,6 +61,7 @@ export default function AddContactModal({ open, onOpenChange }: Props) {
     try {
       await createContact.mutateAsync({
         name: name.trim(),
+        email: email.trim() || null,
         phone: phone.trim() || null,
         notes: notes.trim() || null,
         category,
@@ -86,6 +88,10 @@ export default function AddContactModal({ open, onOpenChange }: Props) {
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground uppercase tracking-wide">Name *</Label>
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="John Smith" required maxLength={100} className="rounded-xl bg-secondary border-0 h-11" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Email</Label>
+              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="john@example.com" maxLength={200} className="rounded-xl bg-secondary border-0 h-11" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground uppercase tracking-wide">Phone</Label>

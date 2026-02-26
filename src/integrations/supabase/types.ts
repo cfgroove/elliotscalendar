@@ -19,6 +19,7 @@ export type Database = {
           archived_at: string | null
           category: Database["public"]["Enums"]["contact_category"]
           created_at: string
+          email: string | null
           id: string
           name: string
           next_action_date: string | null
@@ -32,6 +33,7 @@ export type Database = {
           archived_at?: string | null
           category?: Database["public"]["Enums"]["contact_category"]
           created_at?: string
+          email?: string | null
           id?: string
           name: string
           next_action_date?: string | null
@@ -45,6 +47,7 @@ export type Database = {
           archived_at?: string | null
           category?: Database["public"]["Enums"]["contact_category"]
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
           next_action_date?: string | null
