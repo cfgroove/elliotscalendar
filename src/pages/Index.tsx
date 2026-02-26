@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format, isToday, isBefore, startOfDay, parseISO, addDays, startOfWeek, endOfWeek, isWithinInterval, isSameDay } from 'date-fns';
-import { Plus, Check, Phone, MessageSquare, ChevronRight, LogOut, Calendar, Clock, CalendarDays, Search, X } from 'lucide-react';
+import { Plus, Check, Circle, Phone, MessageSquare, ChevronRight, LogOut, Calendar, Clock, CalendarDays, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
@@ -262,12 +262,13 @@ function EmptyState({ message }: { message: string }) {
 
 function TaskCard({ contact, overdue, onDone, onTap }: { contact: Contact; overdue?: boolean; onDone: () => void; onTap: () => void }) {
   return (
-    <div className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border animate-fade-in">
+    <div className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border animate-fade-in group/card">
       <button
         onClick={(e) => { e.stopPropagation(); onDone(); }}
-        className={`shrink-0 h-10 w-10 rounded-xl flex items-center justify-center transition-colors ${overdue ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'}`}
+        className={`shrink-0 h-10 w-10 rounded-full flex items-center justify-center transition-all border-2 group/btn hover:animate-none ${overdue ? 'border-warning ring-2 ring-warning/30 animate-pulse hover:bg-warning/10 hover:text-warning' : 'border-primary ring-2 ring-primary/30 animate-pulse hover:bg-primary/10 hover:text-primary'}`}
       >
-        <Check className="h-5 w-5" />
+        <Circle className={`h-5 w-5 group-hover/btn:hidden ${overdue ? 'text-warning/40' : 'text-primary/40'}`} />
+        <Check className={`h-5 w-5 hidden group-hover/btn:block ${overdue ? 'text-warning' : 'text-primary'}`} />
       </button>
       <button onClick={onTap} className="flex-1 text-left min-w-0">
         <p className="text-sm font-semibold truncate">{contact.next_action_task || 'Follow up'}</p>
