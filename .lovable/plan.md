@@ -1,35 +1,46 @@
 
 
-## Add Contacts Tab to Bottom Navigation
+## Redesign the Task "Done" Button for Better Clarity
 
-### Changes
+### Problem
+The current check button is a filled purple square with a checkmark already visible. This makes it look like the task is already completed, not something to click. Users don't realize it's interactive.
 
-**1. New page: `src/pages/Contacts.tsx`**
-- Full list of all contacts for the logged-in user, sorted alphabetically by name
-- Search bar at top (same style as Dashboard)
-- Each contact row shows: name, phone, category badge, and next action date
-- Tapping a row opens the existing `ContactDetailSheet` (reuse)
-- FAB button to add new contact (reuse `AddContactModal`)
-- Includes `BottomNav` at bottom
-- Empty state when no contacts exist
+### Changes (single file: `src/pages/Index.tsx`)
 
-**2. Update `src/components/BottomNav.tsx`**
-- Add a "Contacts" tab with the `Users` icon from lucide-react
-- Position it between Pipeline and Calendar
-- Path: `/contacts`
+**1. Replace the filled check icon with an empty circle outline**
+- Swap the `Check` icon for a `Circle` icon (from lucide-react) to signal "not yet done"
+- Add a clear 2px border ring in the primary/warning color
+- Remove the background fill — use `border-2 border-primary` instead of `bg-primary/10`
+- On hover, show the `Check` icon inside the circle as a preview of what clicking does
 
-**3. Update `src/App.tsx`**
-- Add route `/contacts` pointing to the new `Contacts` page, wrapped in `ProtectedRoute`
+**2. Add a subtle pulsing animation to draw attention**
+- Apply an `animate-pulse` style to the circle button so it gently pulses
+- Use a soft glow ring (`ring-2 ring-primary/30`) that pulses to suggest interactivity
+- The pulse stops on hover (replaced by the check preview)
+
+**3. Updated button markup**
+
+Current:
+```
+bg-primary/10 text-primary → filled square with checkmark
+```
+
+New:
+```
+border-2 border-primary rounded-full → empty circle outline
+animate-pulse on the ring/glow
+hover: show Check icon + stop pulse
+```
 
 ### Technical details
 
-| File | Change |
-|------|--------|
-| `src/pages/Contacts.tsx` | New file — contact list page with search, alphabetical sort, detail sheet |
-| `src/components/BottomNav.tsx` | Add `{ path: '/contacts', icon: Users, label: 'Contacts' }` tab |
-| `src/App.tsx` | Add `<Route path="/contacts">` with lazy import |
+| Detail | Value |
+|--------|-------|
+| File | `src/pages/Index.tsx` (TaskCard function, lines 263-289) |
+| Icon change | `Check` → `Circle` (default), `Check` on hover via group-hover |
+| Shape | `rounded-xl` → `rounded-full` for circle feel |
+| Animation | Tailwind `animate-pulse` on a ring shadow, stops on hover |
+| Overdue variant | `border-warning` with warning-colored pulse glow |
 
-- Reuses `useContacts()` hook for data fetching (already returns all user contacts)
-- Reuses `ContactDetailSheet` and `AddContactModal` components
-- No database or dependency changes needed
+No new dependencies — `Circle` is already available in lucide-react, `animate-pulse` is built into Tailwind.
 
