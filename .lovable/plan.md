@@ -1,20 +1,32 @@
 
 
-## Add Email Field to Contacts
+## Feedback Widget with Resend Email
+
+### Prerequisites
+- Store `RESEND_API_KEY` as a backend secret (will prompt user)
 
 ### Changes
 
-**1. Database migration — add `email` column**
-- `ALTER TABLE public.contacts ADD COLUMN email text;` (nullable, since existing rows don't have it)
+**1. Edge function: `supabase/functions/send-feedback/index.ts`**
+- Accepts POST with `{ message, category?, userName?, userEmail? }`
+- Sends email via Resend API to `chase@cfgroove.com`
+- Subject: "App Feedback: {category}" 
+- Body includes the message, user info, and timestamp
+- CORS headers included
 
-**2. `src/components/AddContactModal.tsx`**
-- Add `email` state variable
-- Add Email input field between Name and Phone, styled the same as other fields
-- Include `email` in the submit payload, stored as optional (`email.trim() || null`)
-- Reset email in the `reset()` function
+**2. New component: `src/components/FeedbackWidget.tsx`**
+- Floating button (e.g. bottom-left, speech bubble icon) that opens a small dialog/drawer
+- Fields: category selector (Bug, Feature Request, General), message textarea
+- Auto-fills user name/email from auth context
+- Submit calls the edge function, shows success toast
+- Minimal, friendly UI — one-tap to open, type, send
 
-**3. `src/components/ContactDetailSheet.tsx`**
-- Display email if present (check file for current layout)
+**3. `src/pages/Index.tsx`**
+- Add `<FeedbackWidget />` to the dashboard (or add it in App.tsx so it's available on all pages)
 
-No validation enforcement needed since user said "not optional" — but looking at the screenshot and message again, the user likely means the field should be **included but not required** (i.e., optional). The field label won't have an asterisk.
+**4. `supabase/config.toml`**
+- Add `[functions.send-feedback]` with `verify_jwt = false` (validate auth in code)
+
+### Flow
+User taps feedback icon → dialog opens → types message, picks category → hits Send → edge function emails it to chase@cfgroove.com via Resend → toast confirms "Feedback sent!"
 
