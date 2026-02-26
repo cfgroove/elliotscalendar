@@ -1,10 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Columns3, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Columns3, Users, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const tabs = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/pipeline', icon: Columns3, label: 'Pipeline' },
+  { path: '/contacts', icon: Users, label: 'Contacts' },
   { path: '/calendar', icon: CalendarDays, label: 'Calendar' },
 ];
 
