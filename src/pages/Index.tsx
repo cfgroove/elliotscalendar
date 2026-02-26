@@ -4,6 +4,9 @@ import { Plus, Check, Circle, Phone, MessageSquare, ChevronRight, LogOut, Calend
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 import { useContacts, type Contact } from '@/hooks/useContacts';
 import AddContactModal from '@/components/AddContactModal';
 import MarkDoneModal from '@/components/MarkDoneModal';
@@ -18,7 +21,10 @@ function getGreeting() {
 }
 
 export default function Dashboard() {
-  const { displayName, signOut } = useAuth();
+  const { displayName, user, signOut } = useAuth();
+  const initials = displayName
+    ? displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : user?.email?.[0]?.toUpperCase() ?? '?';
   const { data: contacts = [], isLoading } = useContacts();
   const [addOpen, setAddOpen] = useState(false);
   const [doneContact, setDoneContact] = useState<Contact | null>(null);
@@ -112,9 +118,33 @@ export default function Dashboard() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">{summaryText}</p>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground" onClick={signOut}>
-          <LogOut className="h-4 w-4" />
-        </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="shrink-0 focus:outline-none">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-56 p-4">
+            <div className="flex flex-col items-center gap-1 mb-3">
+              <Avatar className="h-12 w-12 mb-1">
+                <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <p className="text-sm font-semibold">{displayName || 'User'}</p>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
+            </div>
+            <Separator className="mb-3" />
+            <Button variant="ghost" className="w-full justify-start gap-2 text-sm" onClick={signOut}>
+              <LogOut className="h-4 w-4" />
+              Log out
+            </Button>
+          </PopoverContent>
+        </Popover>
       </header>
 
       <main className="px-5 space-y-4">
