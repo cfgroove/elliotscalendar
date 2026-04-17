@@ -50,16 +50,30 @@ export default function Auth() {
         raw === 'Failed to fetch' ||
         raw === 'NetworkError when attempting to fetch resource.' ||
         raw.toLowerCase().includes('networkerror');
+      const status = err?.status ?? err?.statusCode;
       let friendly = raw || 'Authentication failed';
-      if (/invalid login credentials/i.test(raw)) {
+      const isRateLimit =
+        status === 429 ||
+        /over_email_send_rate_limit/i.test(raw) ||
+        /over.*rate limit/i.test(raw) ||
+        /too many/i.test(raw) ||
+        /rate limit/i.test(raw);
+
+      if (mode === 'forgot' && isRateLimit) {
+        friendly =
+          'Too many reset requests. Please wait ~1 hour and try again, or sign in with your existing password.';
+      } else if (/invalid login credentials/i.test(raw)) {
         friendly = 'Email or password is incorrect.';
       } else if (/email not confirmed/i.test(raw)) {
         friendly =
           'Please confirm your email address first — check your inbox for the verification link.';
       } else if (/user already registered/i.test(raw)) {
         friendly = 'An account with this email already exists. Try signing in instead.';
-      } else if (/over.*rate limit/i.test(raw) || /too many/i.test(raw)) {
+      } else if (isRateLimit) {
         friendly = 'Too many attempts. Please wait a minute and try again.';
+      } else if (mode === 'forgot' && isTrueNetworkError) {
+        friendly =
+          "Couldn't send the reset email. You may have hit the hourly limit — please wait ~1 hour and try again.";
       } else if (isTrueNetworkError) {
         friendly =
           "Couldn't reach the auth server. Check your internet connection and try again.";
