@@ -46,15 +46,26 @@ export default function Auth() {
     } catch (err: any) {
       console.error('[Auth] error:', err);
       const raw = err?.message || err?.error_description || err?.error || '';
-      const isNetwork =
+      const isTrueNetworkError =
         raw === 'Failed to fetch' ||
-        raw.toLowerCase().includes('networkerror') ||
-        raw.toLowerCase().includes('fetch');
-      const msg = isNetwork
-        ? "Couldn't reach the auth server from this preview. Open the published site (elliotscalendar.lovable.app) and try again — this is a known preview-only network issue."
-        : (raw || 'Authentication failed');
-      setErrorMsg(msg);
-      toast.error(msg);
+        raw === 'NetworkError when attempting to fetch resource.' ||
+        raw.toLowerCase().includes('networkerror');
+      let friendly = raw || 'Authentication failed';
+      if (/invalid login credentials/i.test(raw)) {
+        friendly = 'Email or password is incorrect.';
+      } else if (/email not confirmed/i.test(raw)) {
+        friendly =
+          'Please confirm your email address first — check your inbox for the verification link.';
+      } else if (/user already registered/i.test(raw)) {
+        friendly = 'An account with this email already exists. Try signing in instead.';
+      } else if (/over.*rate limit/i.test(raw) || /too many/i.test(raw)) {
+        friendly = 'Too many attempts. Please wait a minute and try again.';
+      } else if (isTrueNetworkError) {
+        friendly =
+          "Couldn't reach the auth server. Check your internet connection and try again.";
+      }
+      setErrorMsg(friendly);
+      toast.error(friendly);
     } finally {
       setSubmitting(false);
     }
