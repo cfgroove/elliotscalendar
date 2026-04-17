@@ -124,6 +124,11 @@ export default function Auth() {
               />
             </div>
           )}
+          {errorMsg && (
+            <div className="rounded-xl bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+              {errorMsg}
+            </div>
+          )}
           <Button
             type="submit"
             disabled={submitting}
