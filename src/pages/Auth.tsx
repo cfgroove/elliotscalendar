@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
+type Mode = 'signin' | 'signup' | 'forgot';
+
 export default function Auth() {
   const { user, loading } = useAuth();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -22,13 +25,20 @@ export default function Auth() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (isSignUp) {
+      if (mode === 'signup') {
         const { error } = await signUp(email, password, displayName);
         if (error) throw error;
         toast.success('Account created! You are now logged in.');
-      } else {
+      } else if (mode === 'signin') {
         const { error } = await signIn(email, password);
         if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success('Check your email for a reset link');
+        setMode('signin');
       }
     } catch (err: any) {
       toast.error(err.message || 'Authentication failed');
@@ -37,18 +47,26 @@ export default function Auth() {
     }
   };
 
+  const title =
+    mode === 'signup' ? 'Create your account'
+    : mode === 'forgot' ? 'Reset your password'
+    : 'Welcome back';
+
+  const submitLabel =
+    mode === 'signup' ? 'Create Account'
+    : mode === 'forgot' ? 'Send reset link'
+    : 'Sign In';
+
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold tracking-tight">LeadPilot</h1>
-          <p className="mt-2 text-muted-foreground">
-            {isSignUp ? 'Create your account' : 'Welcome back'}
-          </p>
+          <p className="mt-2 text-muted-foreground">{title}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {isSignUp && (
+          {mode === 'signup' && (
             <div className="space-y-2">
               <Label htmlFor="name">Your name</Label>
               <Input
@@ -75,36 +93,73 @@ export default function Auth() {
               className="rounded-xl bg-secondary border-0 h-12"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              minLength={6}
-              className="rounded-xl bg-secondary border-0 h-12"
-            />
-          </div>
+          {mode !== 'forgot' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                {mode === 'signin' && (
+                  <button
+                    type="button"
+                    onClick={() => setMode('forgot')}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={6}
+                className="rounded-xl bg-secondary border-0 h-12"
+              />
+            </div>
+          )}
           <Button
             type="submit"
             disabled={submitting}
             className="w-full h-12 rounded-xl text-base font-semibold"
           >
-            {submitting ? 'Loading...' : isSignUp ? 'Create Account' : 'Sign In'}
+            {submitting ? 'Loading...' : submitLabel}
           </Button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
-          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-          <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="font-medium text-primary hover:underline"
-          >
-            {isSignUp ? 'Sign in' : 'Sign up'}
-          </button>
+          {mode === 'forgot' ? (
+            <>
+              Remembered it?{' '}
+              <button
+                onClick={() => setMode('signin')}
+                className="font-medium text-primary hover:underline"
+              >
+                Sign in
+              </button>
+            </>
+          ) : mode === 'signup' ? (
+            <>
+              Already have an account?{' '}
+              <button
+                onClick={() => setMode('signin')}
+                className="font-medium text-primary hover:underline"
+              >
+                Sign in
+              </button>
+            </>
+          ) : (
+            <>
+              Don't have an account?{' '}
+              <button
+                onClick={() => setMode('signup')}
+                className="font-medium text-primary hover:underline"
+              >
+                Sign up
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>
