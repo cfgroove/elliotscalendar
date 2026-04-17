@@ -11,6 +11,7 @@ import Contacts from "./pages/Contacts";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Archive from "./pages/Archive";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import FeedbackWidget from "./components/FeedbackWidget";
 
@@ -32,6 +33,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 const AppRoutes = () => (
   <Routes>
     <Route path="/auth" element={<Auth />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
     <Route path="/contacts" element={<ProtectedRoute><Contacts /></ProtectedRoute>} />
