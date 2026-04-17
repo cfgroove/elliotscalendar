@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getAuthRedirectBase } from '@/lib/authUrl';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -68,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: getAuthRedirectBase(),
         data: { display_name: name },
       },
     });

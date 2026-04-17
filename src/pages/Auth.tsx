@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getResetPasswordRedirect } from '@/lib/authUrl';
 import { toast } from 'sonner';
 
 type Mode = 'signin' | 'signup' | 'forgot';
@@ -36,7 +37,7 @@ export default function Auth() {
         if (error) throw error;
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: getResetPasswordRedirect(),
         });
         if (error) throw error;
         toast.success('Check your email for a reset link');
