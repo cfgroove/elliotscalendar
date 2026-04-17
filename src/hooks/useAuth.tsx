@@ -32,14 +32,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) fetchDisplayName(session.user.id);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) fetchDisplayName(session.user.id);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('getSession failed:', err);
+        setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+    // Safety net: never let the app hang on a blank screen if auth init stalls
+    // (e.g. cold PWA launch from Messages with slow/no network).
+    const timeout = setTimeout(() => setLoading(false), 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const fetchDisplayName = async (userId: string) => {

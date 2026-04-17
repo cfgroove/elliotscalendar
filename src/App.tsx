@@ -18,7 +18,13 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 rounded-full border-2 border-muted border-t-primary animate-spin" />
+      </div>
+    );
+  }
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}<FeedbackWidget /></>;
 }
