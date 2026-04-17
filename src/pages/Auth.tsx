@@ -16,6 +16,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { signIn, signUp } = useAuth();
 
   if (loading) return null;
@@ -24,6 +25,7 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setErrorMsg(null);
     try {
       if (mode === 'signup') {
         const { error } = await signUp(email, password, displayName);
@@ -42,7 +44,9 @@ export default function Auth() {
       }
     } catch (err: any) {
       console.error('[Auth] error:', err);
-      toast.error(err?.message || err?.error_description || 'Authentication failed');
+      const msg = err?.message || err?.error_description || err?.error || JSON.stringify(err) || 'Authentication failed';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
