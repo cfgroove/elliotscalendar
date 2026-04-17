@@ -41,7 +41,8 @@ export default function Auth() {
         setMode('signin');
       }
     } catch (err: any) {
-      toast.error(err.message || 'Authentication failed');
+      console.error('[Auth] error:', err);
+      toast.error(err?.message || err?.error_description || 'Authentication failed');
     } finally {
       setSubmitting(false);
     }
