@@ -1,46 +1,79 @@
 
-I looked closely through the auth code, routing, migrations, backend metadata, and available logs.
+Root cause: this is not a Resend problem and not a missing page in your app. The reset email is being generated with the wrong redirect domain:
 
-What stands out most:
-- The three failing actions all use standard, minimal auth calls:
-  - signup: `supabase.auth.signUp(...)`
-  - login: `supabase.auth.signInWithPassword(...)`
-  - reset: `supabase.auth.resetPasswordForEmail(...)`
-- There are no client runtime errors or console errors captured right now.
-- I found backend drift: your checked-in migration creates the “create profile on signup” trigger, but the current backend metadata says there are no DB triggers. That would break profile creation for new users.
-- That trigger issue does not fully explain login + password reset both failing, so there is likely also a backend auth configuration issue.
-- Your signup screen currently says “Account created! You are now logged in.” That message is wrong if email confirmation is enabled, which is commonly the default. In that case users are not actually logged in yet.
+```text
+redirect_to=https://58856d57-0ff3-4e6f-a4e6-61bf9a6564c4.lovableproject.com/reset-password
+```
 
-Most likely situation:
-1. Email/password auth settings are misconfigured or incomplete.
-2. Signup messaging is misleading users about whether the account is usable yet.
-3. Password reset has a separate config problem such as redirect allowlisting or email delivery/rate limiting.
-4. The missing signup trigger is a secondary backend bug that needs repair.
+Your app does have `/reset-password`, but that link points to an internal preview/editor domain instead of the live site. That happens because the auth code currently uses:
 
-Plan to fix this carefully:
-1. Reproduce each auth path one by one against the backend:
-   - sign up with a fresh email
-   - sign in with an existing account
-   - request password reset
-2. Inspect backend auth configuration:
-   - confirm email/password auth is enabled
-   - check whether email confirmation is required
-   - verify the site URL and redirect URLs for `/reset-password`
-3. Repair backend drift:
-   - re-create the missing signup trigger so new users get profile rows again
-4. Fix auth UX so the app tells the truth:
-   - if confirmation is required, show “Check your email to confirm your account”
-   - if login fails because email is unconfirmed, show that explicitly
-   - if reset fails, show the exact backend error inline instead of a vague failed toast
-5. Re-test all three flows end-to-end after the backend and UI fixes
+```ts
+redirectTo: `${window.location.origin}/reset-password`
+emailRedirectTo: window.location.origin
+```
 
-Technical details:
-- Files already reviewed: `src/hooks/useAuth.tsx`, `src/pages/Auth.tsx`, `src/pages/ResetPassword.tsx`, `src/App.tsx`, migrations, and backend metadata.
-- Important discrepancy: migration defines `on_auth_user_created`, but current backend reports no triggers.
-- The current auth code itself is not doing anything unusual enough to explain all three failures at once, which is why I’m prioritizing backend auth config plus trigger repair over a front-end rewrite.
+When auth is triggered from the preview/editor, `window.location.origin` can become that internal `lovableproject.com` host, so the email sends a bad link.
 
-Expected implementation outcome:
-- New accounts create successfully and behave correctly based on confirmation requirements
-- Existing users can log in again
-- Password reset emails send properly and land on the reset screen
-- New signups reliably get profile records created
+## Plan
+
+### 1. Replace origin-based auth redirects with a stable public URL
+Update auth redirect generation so it uses the published app URL instead of `window.location.origin` when running in preview/editor.
+
+Files to update:
+- `src/pages/Auth.tsx`
+- `src/hooks/useAuth.tsx`
+
+Change:
+- password reset redirect → use `https://elliotscalendar.lovable.app/reset-password`
+- signup email redirect → use `https://elliotscalendar.lovable.app`
+
+Implementation approach:
+- add a small shared helper/constant for the app’s public auth base URL
+- use that helper everywhere auth emails generate links
+- optionally keep `window.location.origin` only when already on the published/custom domain
+
+### 2. Harden the reset page for bad/expired links
+Improve `src/pages/ResetPassword.tsx` so it does not just sit on “Verifying reset link...” forever if the token is invalid or missing.
+
+Add:
+- explicit invalid/expired-link state
+- a clear message with a button back to `/auth`
+- optional link to request a new reset email
+
+### 3. Make auth errors more specific
+Keep the inline auth error handling and make sure reset/login/signup failures show exact useful messages instead of vague failure states.
+
+Files:
+- `src/pages/Auth.tsx`
+- possibly `src/pages/ResetPassword.tsx`
+
+### 4. Verify backend redirect settings
+Check the backend auth redirect configuration and ensure the published URL is allowed for:
+- `https://elliotscalendar.lovable.app`
+- `https://elliotscalendar.lovable.app/reset-password`
+
+This is a safety check so the live redirect is accepted consistently.
+
+### 5. Re-test the full auth flow on the published site
+Test these flows against the published URL, not the preview:
+- sign up
+- login
+- forgot password → email → reset page → set new password
+
+## Why this should fix it
+
+The broken page happens before your React app can do anything meaningful: the auth provider is redirecting the user to the wrong domain. Once the email link points to the published domain, the existing `/reset-password` route can load normally and process the recovery session.
+
+## Technical details
+Current relevant code:
+- `src/pages/Auth.tsx` uses `resetPasswordForEmail(... { redirectTo: window.location.origin + '/reset-password' })`
+- `src/hooks/useAuth.tsx` uses `signUp(... { emailRedirectTo: window.location.origin })`
+- `src/App.tsx` already exposes `/reset-password` publicly, which is correct
+- `src/pages/ResetPassword.tsx` already handles password update, but needs better invalid-link UX
+
+## Expected outcome
+After implementation:
+- reset emails open the live reset page instead of a broken internal domain
+- signup confirmation links also use the right app URL
+- users can complete password reset successfully
+- auth testing becomes reliable even if initiated from the editor/preview
