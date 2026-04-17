@@ -1,64 +1,42 @@
 
-What changed in my assessment:
-- You’re right: this is not just a preview problem anymore.
-- The published auth page is loading correctly at `https://elliotscalendar.lovable.app/auth`.
-- The current auth code still mislabels any fetch/network failure as a “preview-only” issue, so it is hiding the real cause on the live site.
 
-What I found:
-- Auth calls are still the normal built-in ones: sign up, sign in, password reset.
-- Reset redirect logic now points to the published site, so the old broken reset-link bug is separate from this.
-- The backend metadata is still inconsistent: `handle_new_user()` exists, but the current backend snapshot still reports no triggers, so signup profile creation may still be broken.
-- The auth logs available in context are only startup logs, not the actual failed sign-in/reset attempts, so the real backend response has not been identified yet.
+## Root cause hypothesis (high confidence)
 
-Plan
+- Signup and signin succeed → backend, DNS, CORS, and the published domain are all healthy
+- Zero `/recover` entries in auth logs → reset requests are not reaching the backend
+- You've triggered many resets today → almost certainly hitting Supabase's per-IP recover rate limit
+- The screenshot still shows the old "preview-only" copy, which is misleading regardless
 
-1. Audit live auth logs for the actual failing requests
-- Query recent auth logs specifically for signup, password reset, and password login endpoints.
-- Confirm whether your published-site attempts are reaching the backend at all.
-- Separate these cases:
-  - request never reaches backend
-  - backend returns 4xx/5xx
-  - backend accepts request but email delivery/rate limit blocks reset
+## Plan
 
-2. Verify backend auth configuration end-to-end
-- Check that email/password auth is enabled.
-- Verify the site URL and redirect allowlist include:
-  - `https://elliotscalendar.lovable.app`
-  - `https://elliotscalendar.lovable.app/reset-password`
-- Check whether confirmation email requirements or rate limits are interfering with sign-in/reset behavior.
+### 1. Confirm rate limiting is the cause
+Trigger one reset on the live site after the UI fix and check auth logs for either a `/recover 429` entry or still nothing. This tells us definitively whether it's rate limit vs. true network failure.
 
-3. Repair backend drift if the signup trigger is still missing
-- Reconcile the database so `on_auth_user_created` definitely exists and points to `public.handle_new_user()`.
-- Remove duplicate/conflicting trigger migrations if needed so the backend state is unambiguous.
+### 2. Fix the misleading error UI on the reset path
+Update `src/pages/Auth.tsx` so when a reset request fails:
+- A `429` / "rate limit" / "over_email_send_rate_limit" response shows: *"Too many reset requests. Please wait ~1 hour and try again, or sign in with your existing password."*
+- A true fetch failure shows the real error, not the preview blurb
+- Remove the remaining "preview-only" wording entirely from the live experience
 
-4. Fix misleading frontend error handling
-- Update `src/pages/Auth.tsx` so it only shows the preview warning on actual preview hosts.
-- On the published site, show the real error instead of the hardcoded preview message.
-- Add lightweight diagnostics to the auth UI so network/auth failures are easier to distinguish.
+### 3. Verify reset actually works once rate limit clears
+- Wait out the throttle (or test from a different IP / mobile data)
+- Trigger reset for `chase@cfgroove.com`
+- Confirm `/recover 200` appears in auth logs
+- Confirm email arrives and reset link lands on `/reset-password` on the live domain
 
-5. Harden reset flow messaging
-- Keep `src/pages/ResetPassword.tsx` resilient for invalid/expired tokens.
-- Make sure reset failures also surface the actual backend message rather than a generic failure.
+### 4. Stop wasting reset attempts during debugging
+You're already logged in as `chaseloganfrancis@gmail.com`. We do NOT need to keep firing reset emails to verify the flow — one clean test after the throttle clears is enough.
 
-6. Re-test only after backend evidence is clear
-- Validate:
-  - sign up
-  - sign in
-  - forgot password
-  - reset email link
-  - set new password
-- Only call it fixed once the live-site flow succeeds end to end.
+## Files to touch
+- `src/pages/Auth.tsx` — better error mapping for `/recover` failures (rate limit, real network, real backend error)
 
-Technical details
-- `src/pages/Auth.tsx` currently treats any fetch-like error as:
-  “Couldn't reach the auth server from this preview...”
-  That is incorrect when the user is on the published domain.
-- `src/hooks/useAuth.tsx` and `src/lib/authUrl.ts` are not obviously the cause of live sign-in/reset failures.
-- The missing `on_auth_user_created` trigger explains signup/profile issues, but not all login/reset failures by itself.
-- No, this does not require Resend just to make default auth emails, login, or password reset work.
+## Out of scope
+- No backend migrations (backend is healthy — signup/signin prove it)
+- No Resend / custom email templates (default emails work; you got one earlier)
+- No new pages
 
-Expected outcome
-- We identify whether the live-site failures are caused by backend config, missing trigger state, rate limiting, or true network failure.
-- Signup creates users and profiles reliably.
-- Sign-in stops showing the wrong preview-only error.
-- Password reset emails send again and the reset flow completes on the live site.
+## Expected outcome
+- You'll see an honest error if you're rate limited instead of a fake "preview" warning
+- Once the throttle window passes, reset emails will send normally and land on the correct page
+- We stop chasing a backend ghost — the backend is fine
+
