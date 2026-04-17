@@ -31,7 +31,7 @@ export default function Auth() {
       if (mode === 'signup') {
         const { error } = await signUp(email, password, displayName);
         if (error) throw error;
-        toast.success('Account created! You are now logged in.');
+        toast.success('Account created! Check your email if confirmation is required.');
       } else if (mode === 'signin') {
         const { error } = await signIn(email, password);
         if (error) throw error;
@@ -45,7 +45,14 @@ export default function Auth() {
       }
     } catch (err: any) {
       console.error('[Auth] error:', err);
-      const msg = err?.message || err?.error_description || err?.error || JSON.stringify(err) || 'Authentication failed';
+      const raw = err?.message || err?.error_description || err?.error || '';
+      const isNetwork =
+        raw === 'Failed to fetch' ||
+        raw.toLowerCase().includes('networkerror') ||
+        raw.toLowerCase().includes('fetch');
+      const msg = isNetwork
+        ? "Couldn't reach the auth server from this preview. Open the published site (elliotscalendar.lovable.app) and try again — this is a known preview-only network issue."
+        : (raw || 'Authentication failed');
       setErrorMsg(msg);
       toast.error(msg);
     } finally {
