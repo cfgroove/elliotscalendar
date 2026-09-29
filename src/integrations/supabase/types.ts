@@ -157,6 +157,7 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
+      list_public_tables: { Args: never; Returns: string[] }
       verify_cron_secret: { Args: { _secret: string }; Returns: boolean }
     }
     Enums: {
