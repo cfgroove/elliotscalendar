@@ -10,6 +10,7 @@ import CalendarView from "./pages/CalendarView";
 import Contacts from "./pages/Contacts";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import AdminBackups from "./pages/AdminBackups";
 import Archive from "./pages/Archive";
 import NotFound from "./pages/NotFound";
 import FeedbackWidget from "./components/FeedbackWidget";
@@ -32,6 +33,7 @@ const AppRoutes = () => (
     <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
     <Route path="/archive" element={<ProtectedRoute><Archive /></ProtectedRoute>} />
     <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+    <Route path="/admin/backups" element={<ProtectedRoute><AdminBackups /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

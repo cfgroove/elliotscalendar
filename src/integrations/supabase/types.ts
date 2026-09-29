@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      automation_run_log: {
+        Row: {
+          automation_key: string
+          detail: string | null
+          id: string
+          ran_at: string
+          status: string
+        }
+        Insert: {
+          automation_key: string
+          detail?: string | null
+          id?: string
+          ran_at?: string
+          status: string
+        }
+        Update: {
+          automation_key?: string
+          detail?: string | null
+          id?: string
+          ran_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      automation_settings: {
+        Row: {
+          enabled: boolean
+          key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           archived_at: string | null
@@ -110,9 +155,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: never; Returns: boolean }
+      is_owner: { Args: never; Returns: boolean }
+      list_public_tables: { Args: never; Returns: string[] }
+      verify_cron_secret: { Args: { _secret: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "owner"
       contact_category:
         | "Warm Lead"
         | "Call Soon"
@@ -245,7 +294,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "owner"],
       contact_category: [
         "Warm Lead",
         "Call Soon",

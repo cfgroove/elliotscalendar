@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -35,6 +36,10 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8 max-w-5xl mx-auto">
+      <nav className="flex gap-4 mb-4 text-sm">
+        <span className="font-medium">Users</span>
+        <Link to="/admin/backups" className="text-muted-foreground hover:text-foreground">Backups</Link>
+      </nav>
       <Card>
         <CardHeader className="flex flex-row items-center gap-3">
           <Users className="h-6 w-6 text-primary" />
